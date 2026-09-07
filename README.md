@@ -2,17 +2,27 @@
   <img src="app.png" alt="SoundBridge" width="600">
 </p>
 
-<h1 align="center">SoundBridge</h1>
+<h1 align="center">SoundBridgePlus</h1>
 
 <p align="center">
-  A free, open-source macOS system-wide volume controller for HDMI and DisplayPort monitors.
+  A free, open-source macOS system-wide volume controller for HDMI and DisplayPort monitors with 10-band EQ and Launch-at-Login support.
 </p>
 
 <p align="center">
   <a href="https://github.com/cn-404-not-found/SoundBridgePlus/releases">Download</a> · 
+  <a href="#-soundbridgeplus-增强特性">Plus 特性</a> · 
   <a href="#how-it-works">How It Works</a> · 
   <a href="#building-from-source">Build</a>
 </p>
+
+---
+
+## ✨ SoundBridgePlus 增强特性 (What's New in Plus)
+
+- 🚀 **开机自启动（Launch at Login）**：基于 macOS 13+ 官方原生 `SMAppService.mainApp` API 实现，可在菜单栏控制面板或设置中一键开启/关闭开机自启，状态与 macOS 系统设置（通用 → 登录项）双向同步。
+- 🔒 **纯净离线体验（移除启动自动更新）**：彻底移除了原项目中的 Sparkle 依赖及启动时的联网检查逻辑，拒绝静默联网请求，启动更快速、更纯粹。
+- ⚙️ **快捷设置入口（Settings Window）**：菜单栏面板底部新增设置按钮，快速调出包含通用自启选项与系统驱动信息的设置窗口。
+- 🛡️ **内置自动签名（Ad-hoc Code Signing）**：构建脚本自带代码签名机制，满足系统登录项的安全准入要求，本地构建直接可用，无需 Apple Developer ID 证书。
 
 ---
 
@@ -131,8 +141,8 @@ make install-deps
 项目依赖 git submodule（HAL 驱动使用的 [libASPL](https://github.com/gavv/libASPL) 库），克隆后必须初始化：
 
 ```bash
-git clone https://github.com/chenjy16/SoundBridge.git
-cd SoundBridge
+git clone https://github.com/cn-404-not-found/SoundBridgePlus.git
+cd SoundBridgePlus
 git submodule update --init --recursive
 ```
 
