@@ -6,11 +6,14 @@
 
 <p align="center">
   A free, open-source macOS system-wide volume controller for HDMI and DisplayPort monitors with 10-band EQ and Launch-at-Login support.
+  <br>
+  <em>本项目基于原作者 <a href="https://github.com/chenjy16">@chenjy16</a> 的开源项目 <a href="https://github.com/chenjy16/SoundBridge">SoundBridge</a> 进行二次开发与功能增强。</em>
 </p>
 
 <p align="center">
   <a href="https://github.com/cn-404-not-found/SoundBridgePlus/releases">Download</a> · 
-  <a href="#-soundbridgeplus-增强特性">Plus 特性</a> · 
+  <a href="#-soundbridgeplus-增强特性-whats-new-in-plus">Plus 特性</a> · 
+  <a href="#-致谢与声明-credits--acknowledgements">致谢</a> · 
   <a href="#how-it-works">How It Works</a> · 
   <a href="#building-from-source">Build</a>
 </p>
@@ -23,6 +26,19 @@
 - 🔒 **纯净离线体验（移除启动自动更新）**：彻底移除了原项目中的 Sparkle 依赖及启动时的联网检查逻辑，拒绝静默联网请求，启动更快速、更纯粹。
 - ⚙️ **快捷设置入口（Settings Window）**：菜单栏面板底部新增设置按钮，快速调出包含通用自启选项与系统驱动信息的设置窗口。
 - 🛡️ **内置自动签名（Ad-hoc Code Signing）**：构建脚本自带代码签名机制，满足系统登录项的安全准入要求，本地构建直接可用，无需 Apple Developer ID 证书。
+
+---
+
+## 🙏 致谢与声明 (Credits & Acknowledgements)
+
+本项目是基于原作者 **[chenjy16](https://github.com/chenjy16)** 开发的优秀开源项目 **[SoundBridge](https://github.com/chenjy16/SoundBridge)** 进行的定制与功能增强（Plus 版本）。
+
+在此特别由衷感谢原作者 **[chenjy16](https://github.com/chenjy16)** 打造了如此优秀的 macOS 虚拟音频驱动架构，解决了大量外接显示器用户的音量调节痛点！
+
+- **原版项目地址**：[https://github.com/chenjy16/SoundBridge](https://github.com/chenjy16/SoundBridge)
+- **底层驱动库**：特别感谢 [gavv/libASPL](https://github.com/gavv/libASPL) 提供的 Audio Server Plugin Library。
+
+所有原始架构与核心代码版权归原作者所有，本项目遵循原项目的 MIT 开源协议。
 
 ---
 
