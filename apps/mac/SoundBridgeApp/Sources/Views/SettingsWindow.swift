@@ -1,10 +1,9 @@
 import SwiftUI
 import AppKit
-import Sparkle
 
 /// Settings window for SoundBridge preferences
 class SettingsWindow: NSWindow {
-	init(updaterController: SPUStandardUpdaterController?) {
+	init() {
 		super.init(
 			contentRect: NSRect(x: 0, y: 0, width: 500, height: 450),
 			styleMask: [.titled, .closable],
@@ -14,18 +13,15 @@ class SettingsWindow: NSWindow {
 
 		self.title = "SoundBridge Settings"
 		self.isReleasedWhenClosed = false
+		self.center()
 		self.contentView = NSHostingView(
-			rootView: SettingsView(updaterController: updaterController)
+			rootView: SettingsView()
 		)
 	}
 }
 
 struct SettingsView: View {
-	let updaterController: SPUStandardUpdaterController?
-
-	@State private var automaticCheckEnabled: Bool = true
-	@State private var lastCheckDate: Date?
-	@State private var isCheckingForUpdates = false
+	@ObservedObject private var launchAtLogin = LaunchAtLoginManager.shared
 
 	var body: some View {
 		VStack(spacing: 0) {
@@ -51,46 +47,25 @@ struct SettingsView: View {
 			// Content
 			ScrollView {
 				VStack(spacing: 24) {
-					// Update Settings Section
+					// General Settings Section
 					VStack(alignment: .leading, spacing: 16) {
-						Text("Updates")
+						Text("General")
 							.font(.headline)
 							.foregroundColor(.primary)
 
-						VStack(alignment: .leading, spacing: 12) {
-							Toggle("Automatically check for updates", isOn: $automaticCheckEnabled)
-								.onChange(of: automaticCheckEnabled) { newValue in
-									updaterController?.updater.automaticallyChecksForUpdates = newValue
-								}
+						VStack(alignment: .leading, spacing: 8) {
+							Toggle("Launch at login", isOn: Binding(
+								get: { launchAtLogin.isEnabled },
+								set: { launchAtLogin.setEnabled($0) }
+							))
+							.toggleStyle(.checkbox)
 
-							if let lastCheck = lastCheckDate {
-								HStack {
-									Text("Last checked:")
-										.foregroundColor(.secondary)
-									Spacer()
-									Text(lastCheck, style: .relative)
-										.foregroundColor(.secondary)
-								}
+							Text(launchAtLogin.statusDescription)
 								.font(.caption)
-							}
-
-							Button(action: checkForUpdates) {
-								HStack {
-									if isCheckingForUpdates {
-										ProgressView()
-											.scaleEffect(0.8)
-											.frame(width: 16, height: 16)
-									} else {
-										Image(systemName: "arrow.triangle.2.circlepath")
-									}
-									Text(isCheckingForUpdates ? "Checking..." : "Check for Updates")
-								}
-								.frame(maxWidth: .infinity)
-							}
-							.disabled(isCheckingForUpdates)
-							.controlSize(.large)
+								.foregroundColor(.secondary)
 						}
 					}
+					.frame(maxWidth: .infinity, alignment: .leading)
 					.padding(16)
 					.background(Color.secondary.opacity(0.05))
 					.cornerRadius(12)
@@ -148,20 +123,7 @@ struct SettingsView: View {
 		}
 		.frame(width: 500, height: 450)
 		.onAppear {
-			automaticCheckEnabled = updaterController?.updater.automaticallyChecksForUpdates ?? true
-		}
-	}
-
-	private func checkForUpdates() {
-		isCheckingForUpdates = true
-		updaterController?.checkForUpdates(nil)
-
-		// Update last check date
-		lastCheckDate = Date()
-
-		// Reset checking state after delay
-		DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-			isCheckingForUpdates = false
+			launchAtLogin.refreshStatus()
 		}
 	}
 

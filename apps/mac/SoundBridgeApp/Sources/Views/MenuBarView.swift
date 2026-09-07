@@ -82,6 +82,14 @@ struct MenuBarView: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
 
+            Divider()
+                .padding(.horizontal, 12)
+                .padding(.vertical, 2)
+
+            LaunchAtLoginRow()
+                .padding(.horizontal, 12)
+                .padding(.vertical, 2)
+
             FooterBar()
                 .padding(.horizontal, 8)
                 .padding(.vertical, 6)
@@ -282,15 +290,58 @@ struct ReconnectAudioButton: View {
     }
 }
 
-// MARK: - Footer
+// MARK: - Options & Footer
+
+struct LaunchAtLoginRow: View {
+    @ObservedObject private var launchAtLogin = LaunchAtLoginManager.shared
+
+    var body: some View {
+        HStack {
+            Toggle("Launch at Login", isOn: Binding(
+                get: { launchAtLogin.isEnabled },
+                set: { launchAtLogin.setEnabled($0) }
+            ))
+            .toggleStyle(.checkbox)
+            .font(.system(size: 11))
+
+            Spacer()
+        }
+    }
+}
 
 struct FooterBar: View {
     var body: some View {
         HStack(spacing: 8) {
+            SettingsButton()
             UninstallButton()
             Spacer()
             QuitButton()
         }
+    }
+}
+
+struct SettingsButton: View {
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: {
+            if let appDelegate = NSApp.delegate as? AppDelegate {
+                appDelegate.openSettingsWindow()
+            }
+        }) {
+            Image(systemName: "gearshape")
+                .font(.system(size: 11, weight: .regular))
+                .foregroundColor(isHovered ? .primary : .secondary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .background(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(isHovered ? Color.secondary.opacity(0.2) : Color.secondary.opacity(0.1))
+                )
+        }
+        .buttonStyle(.plain)
+        .help("Settings")
+        .onHover { hovering in isHovered = hovering }
     }
 }
 

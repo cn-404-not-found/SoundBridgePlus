@@ -5,7 +5,6 @@ import AppKit
 import CoreText
 import CoreGraphics
 import CoreAudio
-import Sparkle
 
 // Main entry point - AppKit-based app with SwiftUI views
 @main
@@ -15,7 +14,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var hostProcess: Process?
     var eventMonitor: EventMonitor?
     var onboardingCoordinator: OnboardingCoordinator?
-    var updaterController: SPUStandardUpdaterController?
+    var settingsWindow: SettingsWindow?
     var driverUpdateWindow: DriverUpdateWindow?
     /// Set to true during uninstall to suppress Host terminationHandler from
     /// calling NSApp.terminate prematurely.
@@ -24,9 +23,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Register custom font
         registerCustomFont()
-
-        // Initialize Sparkle updater
-        initializeUpdater()
 
         // Check if onboarding is needed
         if !OnboardingState.hasCompleted() {
@@ -68,17 +64,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupMenuBar()
     }
 
-    func initializeUpdater() {
-        // Initialize Sparkle with standard user driver
-        updaterController = SPUStandardUpdaterController(
-            startingUpdater: true,
-            updaterDelegate: nil,
-            userDriverDelegate: nil
-        )
-        print("✓ Sparkle updater initialized")
-
-        // Trigger a background check on launch so updates are offered immediately
-        updaterController?.updater.checkForUpdatesInBackground()
+    func openSettingsWindow() {
+        if settingsWindow == nil {
+            settingsWindow = SettingsWindow()
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        settingsWindow?.makeKeyAndOrderFront(nil)
     }
 
     func checkDriverVersionMismatch() {

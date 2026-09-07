@@ -116,7 +116,7 @@ fi
 cp "$APP_EXECUTABLE" "$APP_PATH/Contents/MacOS/SoundBridgeApp"
 chmod +x "$APP_PATH/Contents/MacOS/SoundBridgeApp"
 
-# Add rpath for Frameworks directory (needed for Sparkle)
+# Add rpath for Frameworks directory if needed
 install_name_tool -add_rpath "@executable_path/../Frameworks" "$APP_PATH/Contents/MacOS/SoundBridgeApp" 2>/dev/null || true
 
 echo "  SoundBridgeApp executable copied"
@@ -170,19 +170,20 @@ else
     echo "  No resources directory found at $RESOURCES_DIR"
 fi
 
-# Copy Sparkle framework
-echo "  Copying Sparkle.framework..."
-mkdir -p "$APP_PATH/Contents/Frameworks"
 
-SPARKLE_FRAMEWORK=$(find_swift_product "$PROJECT_ROOT/apps/mac/SoundBridgeApp" "Sparkle.framework")
-
-if [ -d "$SPARKLE_FRAMEWORK" ]; then
-    cp -R "$SPARKLE_FRAMEWORK" "$APP_PATH/Contents/Frameworks/"
-    echo "  Sparkle.framework copied"
-else
-    echo "  Sparkle.framework not found"
-    echo "   Searched in: $PROJECT_ROOT/apps/mac/SoundBridgeApp/.build/"
+# Apply ad-hoc code signature (required for SMAppService launch-at-login on macOS 13+)
+echo "  Applying ad-hoc code signature..."
+if [ -f "$APP_PATH/Contents/MacOS/SoundBridgeHost" ]; then
+    codesign --force --sign - "$APP_PATH/Contents/MacOS/SoundBridgeHost" 2>/dev/null || true
 fi
+if [ -d "$APP_PATH/Contents/Resources/SoundBridgeDriver.driver" ]; then
+    codesign --force --sign - "$APP_PATH/Contents/Resources/SoundBridgeDriver.driver" 2>/dev/null || true
+fi
+if [ -f "$APP_PATH/Contents/MacOS/SoundBridgeApp" ]; then
+    codesign --force --sign - "$APP_PATH/Contents/MacOS/SoundBridgeApp" 2>/dev/null || true
+fi
+codesign --force --sign - "$APP_PATH" 2>/dev/null || true
+echo "  Code signature applied"
 
 # Create PkgInfo file
 echo "APPL????" > "$APP_PATH/Contents/PkgInfo"

@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/chenjy16/SoundBridge/releases">Download</a> · 
+  <a href="https://github.com/cn-404-not-found/SoundBridgePlus/releases">Download</a> · 
   <a href="#how-it-works">How It Works</a> · 
   <a href="#building-from-source">Build</a>
 </p>
@@ -31,7 +31,8 @@ No kernel extensions. No background daemons you can't see. Just a lightweight me
 - Automatic device detection and hot-plug support
 - Universal binary (Apple Silicon + Intel)
 - Guided onboarding with one-click driver install
-- Auto-update via Sparkle
+- Launch at login support (macOS 13+ SMAppService)
+- Pure offline experience with no auto-update checks on launch
 - Code signed and notarized
 
 ## Requirements
@@ -41,7 +42,7 @@ No kernel extensions. No background daemons you can't see. Just a lightweight me
 
 ## Installation
 
-1. Download the latest `.dmg` from [Releases](https://github.com/chenjy16/SoundBridge/releases)
+1. Download the latest `.dmg` from [Releases](https://github.com/cn-404-not-found/SoundBridgePlus/releases)
 2. Drag `SoundBridge.app` to Applications
 3. Launch SoundBridge — the onboarding wizard will guide you through driver installation
 4. Your HDMI/DisplayPort audio device will appear with a working volume slider
@@ -87,7 +88,7 @@ SoundBridge/
 │   └── Sources/
 │       ├── App/                # App entry point, lifecycle
 │       ├── Views/              # MenuBarView, SettingsWindow, Onboarding
-│       ├── Services/           # VolumeController, IPCController, DriverInstaller
+│       ├── Services/           # VolumeController, IPCController, DriverInstaller, LaunchAtLoginManager
 │       └── Resources/          # Icons, fonts, images
 ├── packages/
 │   ├── driver/                 # CoreAudio HAL virtual driver (C++)
