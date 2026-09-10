@@ -131,8 +131,12 @@ class VolumeController: ObservableObject {
             physicalDeviceID = kAudioObjectUnknown
 
             // Extract physical device info from proxy UID
-            let physicalUID = uid.components(separatedBy: "-soundbridge").first ?? uid
-            let physicalName = name.replacingOccurrences(of: " via SoundBridge", with: "")
+            let physicalUID = uid.components(separatedBy: "-soundbridgeplus").first ?? uid.components(separatedBy: "-soundbridge").first ?? uid
+            let physicalName = name
+                .replacingOccurrences(of: " via SoundBridgePlus", with: "")
+                .replacingOccurrences(of: " (SoundBridgePlus)", with: "")
+                .replacingOccurrences(of: " via SoundBridge", with: "")
+                .replacingOccurrences(of: " (SoundBridge)", with: "")
 
             DispatchQueue.main.async { [weak self] in
                 self?.activeDeviceName = physicalName

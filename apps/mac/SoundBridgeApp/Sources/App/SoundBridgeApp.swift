@@ -145,7 +145,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 await MainActor.run {
                     let alert = NSAlert()
                     alert.messageText = "Driver Updated"
-                    alert.informativeText = "The SoundBridge audio driver has been updated to version \(VersionManager.bundledDriverVersion() ?? "unknown")."
+                    alert.informativeText = "The SoundBridgePlus audio driver has been updated to version \(VersionManager.bundledDriverVersion() ?? "unknown")."
                     alert.alertStyle = .informational
                     alert.addButton(withTitle: "OK")
                     alert.runModal()
@@ -207,7 +207,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 button.image = logoImage
             } else {
                 // Fallback to system icon if logo fails to load
-                button.image = NSImage(systemSymbolName: "waveform.circle.fill", accessibilityDescription: "SoundBridge")
+                button.image = NSImage(systemSymbolName: "waveform.circle.fill", accessibilityDescription: "SoundBridgePlus")
             }
             button.action = #selector(togglePopover)
             button.target = self
@@ -569,7 +569,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         guard FileManager.default.fileExists(atPath: driverPath) else {
             showAlert(
                 "Driver Not Installed",
-                "SoundBridge driver is not installed at \(driverPath)\n\nInstall it with:\ncd packages/driver && ./install.sh && sudo killall coreaudiod"
+                "SoundBridgePlus driver is not installed at \(driverPath)\n\nInstall it with:\ncd packages/driver && ./install.sh && sudo killall coreaudiod"
             )
             return
         }
@@ -723,7 +723,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             for path in possiblePaths {
                 print("  - \(path)")
             }
-            showAlert("SoundBridge Host Not Found", "Please build the host first:\ncd packages/host && swift build -c release")
+            showAlert("SoundBridgePlus Host Not Found", "Please build the host first:\ncd packages/host && swift build -c release")
             return
         }
 

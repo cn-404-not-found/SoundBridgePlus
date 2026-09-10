@@ -1,12 +1,12 @@
 #!/bin/bash
-# Signature verification script for SoundBridge
+# Signature verification script for SoundBridgePlus
 # Validates all code signatures and entitlements
 
 set -e
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-APP_BUNDLE="${1:-$PROJECT_ROOT/dist/SoundBridge.app}"
+APP_BUNDLE="${1:-$PROJECT_ROOT/dist/SoundBridgePlus.app}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -29,11 +29,11 @@ section() {
 
 if [ ! -d "$APP_BUNDLE" ]; then
     error "App bundle not found: $APP_BUNDLE"
-    echo "Usage: $0 [path/to/SoundBridge.app]"
+    echo "Usage: $0 [path/to/SoundBridgePlus.app]"
     exit 1
 fi
 
-section "SoundBridge Signature Verification"
+section "SoundBridgePlus Signature Verification"
 echo "Bundle: $APP_BUNDLE"
 
 FAILED=0
@@ -103,7 +103,7 @@ if [ -d "$APP_BUNDLE/Contents/Frameworks" ]; then
 else
     warn "No frameworks found in bundle"
 fi
-verify_component "$APP_BUNDLE" "SoundBridge.app (bundle)"
+verify_component "$APP_BUNDLE" "SoundBridgePlus.app (bundle)"
 
 section "Gatekeeper Assessment"
 

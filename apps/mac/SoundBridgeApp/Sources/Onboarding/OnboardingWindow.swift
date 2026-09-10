@@ -12,7 +12,7 @@ class OnboardingWindow: NSWindow {
         )
 
         self.isReleasedWhenClosed = false
-        self.title = "SoundBridge"
+        self.title = "SoundBridgePlus"
         self.hasShadow = true
 
         // Center on screen

@@ -1,7 +1,7 @@
 import SwiftUI
 import AppKit
 
-/// Settings window for SoundBridge preferences
+/// Settings window for SoundBridgePlus preferences
 class SettingsWindow: NSWindow {
 	init() {
 		super.init(
@@ -11,7 +11,7 @@ class SettingsWindow: NSWindow {
 			defer: false
 		)
 
-		self.title = "SoundBridge Settings"
+		self.title = "SoundBridgePlus Settings"
 		self.isReleasedWhenClosed = false
 		self.center()
 		self.contentView = NSHostingView(
@@ -29,7 +29,7 @@ struct SettingsView: View {
 			VStack(spacing: 12) {
 				AppIconView(size: 64)
 
-				Text("SoundBridge")
+				Text("SoundBridgePlus")
 					.font(.title)
 					.fontWeight(.semibold)
 
@@ -106,11 +106,11 @@ struct SettingsView: View {
 							.foregroundColor(.primary)
 
 						VStack(alignment: .leading, spacing: 8) {
-							Text("SoundBridge is a free, open-source system equalizer for macOS.")
+							Text("SoundBridgePlus is a free, open-source system equalizer for macOS.")
 								.font(.caption)
 								.foregroundColor(.secondary)
 
-							Link("Visit Website", destination: URL(string: "https://soundbridge.app")!)
+							Link("GitHub Repository", destination: URL(string: "https://github.com/cn-404-not-found/SoundBridgePlus")!)
 								.font(.caption)
 						}
 					}

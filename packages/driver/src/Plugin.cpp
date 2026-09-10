@@ -428,6 +428,11 @@ public:
                         RF_DebugLog("OnStartIO: Connected on attempt %d (uid=%s)", attempt, device_uid_.c_str());
                         RF_LOG_INFO("✓ Connected on attempt %d", attempt);
                         state_ = DeviceState::Connected;
+                        has_last_output_timestamp_ = false;
+                        last_output_timestamp_end_ = 0.0;
+                        if (resampler_) {
+                            resampler_->Reset();
+                        }
 
                         // Pre-allocate conversion buffers
                         ResizeBuffers();
@@ -515,6 +520,11 @@ public:
 
         if (count == 0) {
             RF_LOG_INFO("Last client stopped - disconnecting");
+            has_last_output_timestamp_ = false;
+            last_output_timestamp_end_ = 0.0;
+            if (resampler_) {
+                resampler_->Reset();
+            }
             Disconnect();
             state_ = DeviceState::Disconnected;
         }
@@ -576,15 +586,16 @@ public:
 
         // Compensate callback timestamp discontinuities (gaps/overlaps) to keep
         // a continuous producer timeline for the host reader.
-        uint32_t skip_frames = 0;
         uint32_t prepend_silence_frames = 0;
         if (has_last_output_timestamp_) {
             const double delta = timestamp - last_output_timestamp_end_;
-            if (delta > 0.5) {
-                prepend_silence_frames = static_cast<uint32_t>(
-                    std::min<double>(delta, shared_memory_->ring_capacity_frames / 2.0));
-            } else if (delta < -0.5) {
-                skip_frames = static_cast<uint32_t>(std::min<double>(-delta, frameCount));
+            if (delta > 0.5 && delta <= 2048.0) {
+                // Small gap (< ~40ms): insert small silence cushion
+                prepend_silence_frames = static_cast<uint32_t>(delta);
+            } else if (delta > 2048.0 || delta < -0.5) {
+                // Large discontinuity (pause/resume, seek, or timestamp loop):
+                // Resync timeline without inserting huge silence or dropping frames
+                has_last_output_timestamp_ = false;
             }
         }
         has_last_output_timestamp_ = true;
@@ -592,14 +603,11 @@ public:
 
         // Handle sample rate conversion if needed
         if (fmt.mSampleRate != shared_memory_->sample_rate) {
-            const float* payload = interleaved_buf_.data() + (skip_frames * fmt.mChannelsPerFrame);
-            const uint32_t payload_frames = frameCount - skip_frames;
-            if (payload_frames > 0) {
-                ProcessWithSampleRateConversion(payload, payload_frames,
+            ProcessWithSampleRateConversion(interleaved_buf_.data(), frameCount,
                                             fmt.mSampleRate, shared_memory_->sample_rate,
                                             fmt.mChannelsPerFrame);
-            }
         } else {
+            // When sample rates match, stream directly (bit-perfect) into ring buffer
             if (prepend_silence_frames > 0) {
                 const size_t available_silence_frames =
                     silence_buf_.size() / fmt.mChannelsPerFrame;
@@ -608,16 +616,10 @@ public:
                 }
                 const size_t silence_needed = prepend_silence_frames * fmt.mChannelsPerFrame;
                 std::fill_n(silence_buf_.begin(), silence_needed, 0.0f);
-                WriteWithAdaptiveDriftCompensation(silence_buf_.data(), prepend_silence_frames,
-                                                   fmt.mSampleRate, fmt.mChannelsPerFrame);
+                rf_ring_write(shared_memory_, silence_buf_.data(), prepend_silence_frames);
             }
 
-            const float* payload = interleaved_buf_.data() + (skip_frames * fmt.mChannelsPerFrame);
-            const uint32_t payload_frames = frameCount - skip_frames;
-            if (payload_frames > 0) {
-                WriteWithAdaptiveDriftCompensation(payload, payload_frames,
-                                               fmt.mSampleRate, fmt.mChannelsPerFrame);
-            }
+            rf_ring_write(shared_memory_, interleaved_buf_.data(), frameCount);
         }
 
         stats_.LogPeriodic();
@@ -1045,9 +1047,9 @@ std::shared_ptr<aspl::Device> CreateProxyDevice(const std::string& name, const s
     if (!g_state) return nullptr;
 
     aspl::DeviceParameters params;
-    params.Name = name + " (SoundBridge)";
+    params.Name = name + " (SoundBridgePlus)";
     params.DeviceUID = uid + "-soundbridge";
-    params.Manufacturer = "SoundBridge";
+    params.Manufacturer = "SoundBridgePlus";
     params.SampleRate = DEFAULT_SAMPLE_RATE;
     params.ChannelCount = DEFAULT_CHANNELS;
     params.EnableMixing = true;

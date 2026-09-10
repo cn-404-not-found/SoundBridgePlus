@@ -47,7 +47,7 @@ struct OnboardingView: View {
 
 // MARK: - Step 1: Welcome
 
-/// Welcome page introducing SoundBridge and its core functionality
+/// Welcome page introducing SoundBridgePlus and its core functionality
 private struct WelcomeStepView: View {
     let onNext: () -> Void
 
@@ -59,10 +59,10 @@ private struct WelcomeStepView: View {
             AppIconView(size: 64)
 
             VStack(spacing: 12) {
-                Text("Welcome to SoundBridge")
+                Text("Welcome to SoundBridgePlus")
                     .font(.system(size: 28, weight: .bold))
 
-                Text("SoundBridge lets you control HDMI monitor volume with your keyboard volume keys")
+                Text("SoundBridgePlus lets you control HDMI monitor volume with your keyboard volume keys")
                     .font(.system(size: 15))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -120,9 +120,9 @@ private struct DriverInstallStepView: View {
 
                 if installer.state.isComplete {
                     Button(action: onComplete) {
-                        Text("Open SoundBridge")
+                        Text("Open SoundBridgePlus")
                             .font(.system(size: 14, weight: .medium))
-                            .frame(width: 160)
+                            .frame(width: 180)
                     }
                     .keyboardShortcut(.return)
                     .controlSize(.large)
@@ -203,7 +203,7 @@ private struct DriverInstallStepView: View {
             Text("Installation Complete")
                 .font(.system(size: 22, weight: .semibold))
 
-            Text("Select the SoundBridge device in System Settings → Sound to get started")
+            Text("Select the SoundBridgePlus device in System Settings → Sound to get started")
                 .font(.system(size: 14))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)

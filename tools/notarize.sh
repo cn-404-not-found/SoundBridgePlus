@@ -1,14 +1,14 @@
 #!/bin/bash
 set -e
 
-# SoundBridge Notarization Script
+# SoundBridgePlus Notarization Script
 # Notarizes the signed app, staples the ticket, then rebuilds the DMG.
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-APP_PATH="$PROJECT_ROOT/dist/SoundBridge.app"
-DMG_PATH="$PROJECT_ROOT/dist/SoundBridge.dmg"
-ZIP_PATH="$PROJECT_ROOT/dist/SoundBridge-notarize.zip"
+APP_PATH="$PROJECT_ROOT/dist/SoundBridgePlus.app"
+DMG_PATH="$PROJECT_ROOT/dist/SoundBridgePlus.dmg"
+ZIP_PATH="$PROJECT_ROOT/dist/SoundBridgePlus-notarize.zip"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -70,7 +70,7 @@ echo -e "${GREEN}OK${NC}: Notarization accepted"
 section "Step 3/5: Stapling Ticket to App"
 
 xcrun stapler staple "$APP_PATH"
-echo -e "${GREEN}OK${NC}: Ticket stapled to SoundBridge.app"
+echo -e "${GREEN}OK${NC}: Ticket stapled to SoundBridgePlus.app"
 
 # ── Step 4: Rebuild DMG with stapled app ───────────────────────
 

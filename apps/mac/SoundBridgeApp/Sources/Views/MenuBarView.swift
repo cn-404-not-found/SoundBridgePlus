@@ -366,8 +366,8 @@ struct UninstallButton: View {
 
     private func performUninstall() {
         let alert = NSAlert()
-        alert.messageText = "Uninstall SoundBridge Driver"
-        alert.informativeText = "This will remove the audio driver, stop background processes, and clear configuration data. The app itself will not be deleted — you can reinstall the driver anytime."
+        alert.messageText = "Uninstall SoundBridgePlus Driver"
+        alert.informativeText = "This will remove the SoundBridgePlus audio driver, stop background processes, and clear configuration data. The app itself will not be deleted — you can reinstall the driver anytime."
         alert.alertStyle = .warning
         alert.addButton(withTitle: "Uninstall Driver")
         alert.addButton(withTitle: "Cancel")
@@ -440,7 +440,7 @@ struct QuitButton: View {
         Button(action: {
             NSApp.terminate(nil)
         }) {
-            Text("Quit SoundBridge")
+            Text("Quit SoundBridgePlus")
                 .font(.system(size: 11, weight: .regular))
                 .foregroundColor(isHovered ? .white : .primary)
                 .padding(.horizontal, 10)

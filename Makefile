@@ -1,12 +1,12 @@
-# SoundBridge Development Makefile
-# Shortcuts for building, testing, and running SoundBridge
+# SoundBridgePlus Development Makefile
+# Shortcuts for building, testing, and running SoundBridgePlus
 
 .PHONY: help clean build run dev reset bundle install-deps test sign verify release test-release quick rebuild dmg full-release changelog update-version
 
 # Default target - show help
 help:
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-	@echo "  SoundBridge Development Commands"
+	@echo "  SoundBridgePlus Development Commands"
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo ""
 	@echo "  Development:"
@@ -41,15 +41,15 @@ help:
 # Start from scratch - full developer workflow with onboarding
 dev: reset build bundle
 	@echo ""
-	@echo "Starting SoundBridge with onboarding..."
+	@echo "Starting SoundBridgePlus with onboarding..."
 	@echo ""
-	@open dist/SoundBridge.app
+	@open dist/SoundBridgePlus.app
 
 # Run app normally without resetting onboarding
 run:
-	@echo "Starting SoundBridge..."
-	@if [ -d "dist/SoundBridge.app" ]; then \
-		open dist/SoundBridge.app; \
+	@echo "Starting SoundBridgePlus..."
+	@if [ -d "dist/SoundBridgePlus.app" ]; then \
+		open dist/SoundBridgePlus.app; \
 	else \
 		echo "❌ App bundle not found. Run 'make bundle' first."; \
 		exit 1; \
@@ -83,12 +83,12 @@ clean:
 
 # Reset onboarding and uninstall driver (for testing onboarding flow)
 reset:
-	@echo "Resetting SoundBridge for fresh start..."
+	@echo "Resetting SoundBridgePlus for fresh start..."
 	@pkill -f "SoundBridgeApp|SoundBridgeHost" 2>/dev/null || true
 	@./tools/uninstall_driver.sh || echo "No driver to uninstall (this is fine)"
-	@defaults delete com.soundbridge.menubar hasCompletedOnboarding 2>/dev/null || true
-	@defaults delete com.soundbridge.menubar onboardingVersion 2>/dev/null || true
-	@defaults delete com.soundbridge.menubar driverInstallDate 2>/dev/null || true
+	@defaults delete com.soundbridgeplus.menubar hasCompletedOnboarding 2>/dev/null || true
+	@defaults delete com.soundbridgeplus.menubar onboardingVersion 2>/dev/null || true
+	@defaults delete com.soundbridgeplus.menubar driverInstallDate 2>/dev/null || true
 	@sleep 2
 	@echo "✓ Reset complete - next launch will show onboarding"
 
@@ -123,7 +123,7 @@ rebuild: clean build bundle
 
 # Code signing targets
 sign:
-	@echo "Code signing SoundBridge.app..."
+	@echo "Code signing SoundBridgePlus.app..."
 	@./tools/codesign.sh
 
 verify:
@@ -137,7 +137,7 @@ release: build bundle sign verify
 	@echo "     Release Build Complete!"
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo ""
-	@echo "Signed app: dist/SoundBridge.app"
+	@echo "Signed app: dist/SoundBridgePlus.app"
 	@echo ""
 	@echo "Next steps:"
 	@echo "  • Test: make test-release"
@@ -148,7 +148,7 @@ release: build bundle sign verify
 # Test the signed release build
 test-release:
 	@echo " Testing signed release build..."
-	@open dist/SoundBridge.app
+	@open dist/SoundBridgePlus.app
 
 # Create DMG for distribution
 dmg:

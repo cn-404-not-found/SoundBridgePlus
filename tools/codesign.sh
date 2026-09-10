@@ -1,12 +1,12 @@
 #!/bin/bash
-# Code signing script for SoundBridge
+# Code signing script for SoundBridgePlus
 # Signs all components with Developer ID certificate
 
 set -e  # Exit on error
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-APP_BUNDLE="$PROJECT_ROOT/dist/SoundBridge.app"
+APP_BUNDLE="$PROJECT_ROOT/dist/SoundBridgePlus.app"
 
 # Colors for output
 RED='\033[0;31m'
@@ -108,7 +108,7 @@ else
     echo "Using identity: $SIGNING_IDENTITY"
 fi
 
-section "Code Signing SoundBridge"
+section "Code Signing SoundBridgePlus"
 
 # Signing options
 SIGN_OPTS=(
@@ -215,11 +215,11 @@ else
 fi
 
 # Step 5: Sign the entire app bundle (outer signature)
-echo "Signing SoundBridge.app bundle..."
+echo "Signing SoundBridgePlus.app bundle..."
 if codesign "${SIGN_OPTS[@]}" \
     --entitlements "$PROJECT_ROOT/apps/mac/SoundBridgeApp/SoundBridgeApp.entitlements" \
     "$APP_BUNDLE"; then
-    success "SoundBridge.app bundle signed"
+    success "SoundBridgePlus.app bundle signed"
 else
     error "Failed to sign app bundle"
     exit 1
@@ -239,7 +239,7 @@ fi
 echo " Verifying SoundBridgeApp..."
 codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE/Contents/MacOS/SoundBridgeApp"
 
-echo " Verifying SoundBridge.app bundle..."
+echo " Verifying SoundBridgePlus.app bundle..."
 codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"
 
 # Check Gatekeeper acceptance

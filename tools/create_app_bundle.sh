@@ -1,5 +1,5 @@
 #!/bin/bash
-# Create proper .app bundle structure for SoundBridge
+# Create proper .app bundle structure for SoundBridgePlus
 # Supports universal binaries (arm64 + x86_64)
 
 set -e  # Exit on error
@@ -7,7 +7,7 @@ set -e  # Exit on error
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 DIST_DIR="$PROJECT_ROOT/dist"
-APP_NAME="SoundBridge.app"
+APP_NAME="SoundBridgePlus.app"
 APP_PATH="$DIST_DIR/$APP_NAME"
 
 # Helper: find a Swift build product, checking universal build path first,
@@ -57,7 +57,7 @@ find_swift_product() {
     echo ""
 }
 
-echo "Creating SoundBridge.app bundle structure..."
+echo "Creating SoundBridgePlus.app bundle structure..."
 
 # Clean and create dist directory
 rm -rf "$DIST_DIR"
@@ -190,7 +190,7 @@ echo "APPL????" > "$APP_PATH/Contents/PkgInfo"
 
 # Verify architectures if lipo is available
 echo ""
-echo "  SoundBridge.app bundle created successfully!"
+echo "  SoundBridgePlus.app bundle created successfully!"
 echo "   Location: $APP_PATH"
 echo ""
 if command -v lipo >/dev/null 2>&1; then

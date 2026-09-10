@@ -256,28 +256,29 @@ static inline bool rf_is_connection_healthy(const RFSharedAudio* mem) {
 }
 
 /**
- * Write frames to ring buffer with automatic format conversion
- *
- * This version accepts float32 input and converts to the ring buffer's format
+ * Write frames to ring buffer with automatic format conversion.
+ * Strictly single-producer: only modifies write_index, NEVER touches read_index.
  */
 static inline uint32_t rf_ring_write(
     RFSharedAudio* mem,
     const float* input_frames,  // Always float32 input
     uint32_t num_frames)
 {
-    uint64_t write_idx = atomic_load(&mem->write_index);
-    uint64_t read_idx = atomic_load(&mem->read_index);
-    uint32_t capacity = mem->ring_capacity_frames;
+    if (!mem || !input_frames || num_frames == 0) return 0;
 
-    // Check for overflow - advance read_index to keep producer timeline intact
-    uint64_t used = write_idx - read_idx;
+    uint32_t capacity = mem->ring_capacity_frames;
+    if (capacity == 0) return 0;
+
+    uint64_t write_idx = atomic_load_explicit(&mem->write_index, memory_order_relaxed);
+    uint64_t read_idx = atomic_load_explicit(&mem->read_index, memory_order_acquire);
+
+    // Guard against unsigned underflow if read_idx > write_idx (e.g. host reset/recreated)
+    uint64_t used = (write_idx >= read_idx) ? (write_idx - read_idx) : 0;
     if (used + num_frames > capacity) {
-        uint32_t frames_to_drop = (uint32_t)((used + num_frames) - capacity);
-        atomic_store(&mem->read_index, read_idx + frames_to_drop);
-        atomic_fetch_add(&mem->overrun_count, 1);
+        atomic_fetch_add_explicit(&mem->overrun_count, 1, memory_order_relaxed);
     }
 
-    // Write with format conversion
+    // Write with format conversion (producer writes into its circular window)
     for (uint32_t frame = 0; frame < num_frames; frame++) {
         uint32_t ring_pos = (uint32_t)((write_idx + frame) % capacity);
         uint8_t* dest = &mem->audio_data[ring_pos * mem->bytes_per_frame];
@@ -326,28 +327,51 @@ static inline uint32_t rf_ring_write(
         }
     }
 
-    atomic_store(&mem->write_index, write_idx + num_frames);
-    atomic_fetch_add(&mem->total_frames_written, num_frames);
+    atomic_store_explicit(&mem->write_index, write_idx + num_frames, memory_order_release);
+    atomic_fetch_add_explicit(&mem->total_frames_written, num_frames, memory_order_relaxed);
 
     return num_frames;
 }
 
 /**
- * Read frames from ring buffer with automatic format conversion
- *
- * This version outputs float32 regardless of ring buffer format
+ * Read frames from ring buffer with automatic format conversion.
+ * Strictly single-consumer: only modifies read_index, NEVER touches write_index.
+ * Contains automatic resynchronization & self-healing if producer overran or underflow occurred.
  */
 static inline uint32_t rf_ring_read(
     RFSharedAudio* mem,
     float* output_frames,  // Always float32 output
     uint32_t num_frames)
 {
-    uint64_t write_idx = atomic_load(&mem->write_index);
-    uint64_t read_idx = atomic_load(&mem->read_index);
-    uint32_t capacity = mem->ring_capacity_frames;
-    uint32_t available = (uint32_t)(write_idx - read_idx);
+    if (!mem || !output_frames || num_frames == 0) return 0;
 
-    uint32_t frames_to_read = (available < num_frames) ? available : num_frames;
+    uint32_t capacity = mem->ring_capacity_frames;
+    if (capacity == 0) {
+        for (uint32_t i = 0; i < num_frames * mem->channels; i++) output_frames[i] = 0.0f;
+        return num_frames;
+    }
+
+    uint64_t write_idx = atomic_load_explicit(&mem->write_index, memory_order_acquire);
+    uint64_t read_idx = atomic_load_explicit(&mem->read_index, memory_order_relaxed);
+
+    // Self-healing 1: In case of corruption / clock reset where write_idx < read_idx
+    if (write_idx < read_idx) {
+        read_idx = write_idx;
+        atomic_store_explicit(&mem->read_index, read_idx, memory_order_relaxed);
+    }
+
+    uint64_t available = write_idx - read_idx;
+
+    // Self-healing 2: If consumer fell behind by more than capacity (producer overran consumer)
+    // Safely skip stale frames and resync read_idx to half a buffer behind producer
+    if (available > capacity) {
+        uint32_t cushion = capacity / 2;
+        read_idx = (write_idx > cushion) ? (write_idx - cushion) : 0;
+        available = write_idx - read_idx;
+        atomic_fetch_add_explicit(&mem->overrun_count, 1, memory_order_relaxed);
+    }
+
+    uint32_t frames_to_read = (available < (uint64_t)num_frames) ? (uint32_t)available : num_frames;
 
     // Read with format conversion
     for (uint32_t frame = 0; frame < frames_to_read; frame++) {
@@ -396,7 +420,7 @@ static inline uint32_t rf_ring_read(
 
     // Fill remaining with silence if underrun
     if (frames_to_read < num_frames) {
-        atomic_fetch_add(&mem->underrun_count, 1);
+        atomic_fetch_add_explicit(&mem->underrun_count, 1, memory_order_relaxed);
         for (uint32_t frame = frames_to_read; frame < num_frames; frame++) {
             for (uint32_t ch = 0; ch < mem->channels; ch++) {
                 output_frames[frame * mem->channels + ch] = 0.0f;
@@ -404,8 +428,8 @@ static inline uint32_t rf_ring_read(
         }
     }
 
-    atomic_store(&mem->read_index, read_idx + frames_to_read);
-    atomic_fetch_add(&mem->total_frames_read, frames_to_read);
+    atomic_store_explicit(&mem->read_index, read_idx + frames_to_read, memory_order_release);
+    atomic_fetch_add_explicit(&mem->total_frames_read, frames_to_read, memory_order_relaxed);
 
     return num_frames;
 }

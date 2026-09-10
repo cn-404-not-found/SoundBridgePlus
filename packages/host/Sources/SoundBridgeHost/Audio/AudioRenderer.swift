@@ -12,9 +12,13 @@ class AudioRenderer {
     private let proxyManager: ProxyDeviceManager
     private var didLogRenderInfo = false
     private var testTonePhase: Float = 0
-    private var tempBuffer: [Float] = []
+    private var tempBuffer: [Float]
     private let useTestTone: Bool
     private var dspEngine: OpaquePointer?
+
+    // Cached shared memory pointer to avoid lock/hash lookup on real-time thread
+    private var cachedSharedMem: UnsafeMutablePointer<RFSharedAudio>?
+    private var lastActiveUID: String?
 
     // Gain Stage state
     private var currentGain: Float = -1.0  // negative = uninitialized, snap on first frame
@@ -31,6 +35,7 @@ class AudioRenderer {
         self.memoryManager = memoryManager
         self.proxyManager = proxyManager
         self.useTestTone = (ProcessInfo.processInfo.environment["RF_TEST_TONE"] == "1")
+        self.tempBuffer = [Float](repeating: 0, count: 65536)
         self.dspEngine = soundbridge_dsp_create(SoundBridgeConfig.activeSampleRate)
 
         // Apply initial preset immediately so DSP is always active
@@ -90,15 +95,17 @@ class AudioRenderer {
             print("[AudioRenderer] First render: frames=\(frameCount) buffers=\(numBuffers) sizes=\(sizes)")
         }
 
-        let sharedMem: UnsafeMutablePointer<RFSharedAudio>?
-
-        if let activeUID = proxyManager.activeProxyUID {
-            sharedMem = memoryManager.getMemory(for: activeUID)
-        } else {
-            sharedMem = memoryManager.getFirstMemory()
+        let currentUID = proxyManager.activeProxyUID
+        if cachedSharedMem == nil || currentUID != lastActiveUID {
+            lastActiveUID = currentUID
+            if let uid = currentUID {
+                cachedSharedMem = memoryManager.getMemory(for: uid)
+            } else {
+                cachedSharedMem = memoryManager.getFirstMemory()
+            }
         }
 
-        guard let mem = sharedMem else {
+        guard let mem = cachedSharedMem else {
             outputSilence(bufferList: bufferList, frameCount: frameCount)
             return
         }
@@ -106,7 +113,7 @@ class AudioRenderer {
         let channelCount = Int(bufferList.pointee.mNumberBuffers)
         let needed = Int(frameCount) * channelCount
         if tempBuffer.count < needed {
-            tempBuffer = [Float](repeating: 0, count: needed)
+            tempBuffer = [Float](repeating: 0, count: max(needed, 65536))
         } else {
             for i in 0..<needed {
                 tempBuffer[i] = 0
@@ -134,7 +141,8 @@ class AudioRenderer {
         }
 
         // === EQ Processing ===
-        if let engine = dspEngine, framesRead > 0 {
+        // Note: DSP engine currently processes stereo (2 channels).
+        if let engine = dspEngine, framesRead > 0, channelCount == 2 {
             var eqSnapshot = RFEQSnapshot()
             rf_load_eq_snapshot(mem, &eqSnapshot)
 

@@ -22,6 +22,11 @@
 
 ## ✨ SoundBridgePlus 增强特性 (What's New in Plus)
 
+- 🔊 **彻底解决音频爆音与死锁（Anti-Popping & Self-Healing SPSC Buffer）**：
+  - **严格单写者 SPSC 环形缓冲区**：重构了虚拟驱动与音频引擎之间的跨进程通信协议，严守驱动仅写 `write_index`、Host 仅写 `read_index` 的铁律，彻底根除原版中因多进程并发篡改读指针引发的 64 位整数无符号下溢与永久爆音死循环；
+  - **自动对齐与自愈恢复**：增加了指针越界检测与自愈机制，遇到极端时钟抖动或缓冲区溢出时，由 Host 消费端平滑重设安全水位，彻底消除“一旦爆音无法自愈、必须多次退出重启”的痛点；
+  - **纯净直通（Bit-perfect Passthrough）**：在虚拟设备与物理硬件同采样率（如主流 48kHz）下启用纯净直通，旁路容易在跨 Buffer 处产生波形阶跃断裂的简易线性重采样器，消除“噼啪”碎杂音；
+  - **RT-Safe 实时音频渲染优化**：在 CoreAudio 实时渲染回调中缓存共享内存裸指针，彻底移除互斥锁与动态堆分配，杜绝音频线程优先级反转引起的硬件缓冲区断音。
 - 🚀 **开机自启动（Launch at Login）**：基于 macOS 13+ 官方原生 `SMAppService.mainApp` API 实现，可在菜单栏控制面板或设置中一键开启/关闭开机自启，状态与 macOS 系统设置（通用 → 登录项）双向同步。
 - 🔒 **纯净离线体验（移除启动自动更新）**：彻底移除了原项目中的 Sparkle 依赖及启动时的联网检查逻辑，拒绝静默联网请求，启动更快速、更纯粹。
 - ⚙️ **快捷设置入口（Settings Window）**：菜单栏面板底部新增设置按钮，快速调出包含通用自启选项与系统驱动信息的设置窗口。
@@ -59,6 +64,7 @@ No kernel extensions. No background daemons you can't see. Just a lightweight me
 - Guided onboarding with one-click driver install
 - Launch at login support (macOS 13+ SMAppService)
 - Pure offline experience with no auto-update checks on launch
+- Rock-solid lock-free SPSC audio ring buffer with self-healing to prevent crackling and underflow
 - Code signed and notarized
 
 ## Requirements
@@ -69,11 +75,11 @@ No kernel extensions. No background daemons you can't see. Just a lightweight me
 ## Installation
 
 1. Download the latest `.dmg` from [Releases](https://github.com/cn-404-not-found/SoundBridgePlus/releases)
-2. Drag `SoundBridge.app` to Applications
-3. Launch SoundBridge — the onboarding wizard will guide you through driver installation
+2. Drag `SoundBridgePlus.app` to Applications
+3. Launch SoundBridgePlus — the onboarding wizard will guide you through driver installation
 4. Your HDMI/DisplayPort audio device will appear with a working volume slider
 
-To uninstall, use the "Uninstall" option in the SoundBridge menu bar dropdown.
+To uninstall, use the "Uninstall" option in the SoundBridgePlus menu bar dropdown.
 
 ## How It Works
 
@@ -180,9 +186,9 @@ make run
 3. 构建 HAL 虚拟驱动（C++，universal，依赖 libASPL）
 4. 构建 Audio Host（Swift，universal）
 5. 构建 Menu Bar App（Swift，universal）
-6. 创建 `dist/SoundBridge.app` 应用包
+6. 创建 `dist/SoundBridgePlus.app` 应用包
 
-构建产物位于 `dist/SoundBridge.app`。
+构建产物位于 `dist/SoundBridgePlus.app`。
 
 ### 常用命令
 
@@ -251,7 +257,7 @@ cd apps/mac/SoundBridgeApp && swift build -c release
 
 ```
 dist/
-└── SoundBridge.app/
+└── SoundBridgePlus.app/
     └── Contents/
         ├── MacOS/
         │   ├── SoundBridgeApp          # 主程序（Menu Bar 应用）
