@@ -187,10 +187,13 @@ class AudioRenderer {
         }
 
         if targetGain == 0.0 {
-            // Mute / zero volume: hard silence, no smoothing tail
-            currentGain = 0.0
-            for i in 0..<sampleCount {
-                tempBuffer[i] = 0
+            // Smooth down to 0.0 over frames rather than instant hard cut to avoid pops
+            for i in 0..<Int(framesRead) {
+                currentGain = currentGain * smoothingCoeff
+                if currentGain < 1.0e-6 { currentGain = 0.0 }
+                for ch in 0..<channelCount {
+                    tempBuffer[i * channelCount + ch] *= currentGain
+                }
             }
         } else if targetGain == 1.0 && currentGain > 0.999 {
             // Full volume: bit-perfect passthrough

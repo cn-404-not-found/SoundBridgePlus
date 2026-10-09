@@ -443,12 +443,18 @@ public:
                         // without this cushion, the host reads before the driver writes ~50% of
                         // cold starts, causing persistent underruns and Safari stutter.
                         {
-                            const uint32_t prefill = shared_memory_->ring_capacity_frames / 2;
-                            const uint32_t channels = shared_memory_->channels;
-                            std::vector<float> silence(prefill * channels, 0.0f);
-                            rf_ring_write(shared_memory_, silence.data(), prefill);
-                            RF_LOG_INFO("Prebuffered %u frames of silence (%ums cushion)",
-                                prefill, prefill * 1000 / shared_memory_->sample_rate);
+                            uint64_t w_idx = atomic_load_explicit(&shared_memory_->write_index, std::memory_order_relaxed);
+                            uint64_t r_idx = atomic_load_explicit(&shared_memory_->read_index, std::memory_order_relaxed);
+                            uint64_t avail = (w_idx >= r_idx) ? (w_idx - r_idx) : 0;
+                            const uint32_t target_cushion = shared_memory_->ring_capacity_frames / 4; // 25ms cushion
+                            if (avail < target_cushion) {
+                                const uint32_t needed = target_cushion - static_cast<uint32_t>(avail);
+                                const uint32_t channels = shared_memory_->channels;
+                                std::vector<float> silence(needed * channels, 0.0f);
+                                rf_ring_write(shared_memory_, silence.data(), needed);
+                                RF_LOG_INFO("Prebuffered %u frames of silence (%ums cushion, had %llu)",
+                                    needed, needed * 1000 / shared_memory_->sample_rate, (unsigned long long)avail);
+                            }
                         }
 
                         last_heartbeat_ = std::chrono::steady_clock::now();
@@ -464,20 +470,27 @@ public:
                             RF_DebugLog("OnStartIO: set shared memory on MuteControl");
                         }
 
-                        // Sync current volume/mute state to shared memory.
-                        // This handles the case where volume was set before IO started.
-                        RF_DebugLog("OnStartIO: device_=%p", (void*)device_);
+                        // Sync volume/mute state bi-directionally.
+                        // Prefer existing shared memory state (from host/persistence) over uninitialized control.
                         if (volumeControl_) {
-                            float vol = volumeControl_->GetScalarValue();
-                            rf_store_volume_scalar(shared_memory_, vol);
-                            RF_DebugLog("OnStartIO: synced VolumeControl value=%.3f", vol);
-                            RF_LOG_INFO("Synced volume=%.3f to shared memory", vol);
+                            float shm_vol = rf_load_volume_scalar(shared_memory_);
+                            float vc_vol = volumeControl_->GetScalarValue();
+                            if (shm_vol > 0.0f) {
+                                volumeControl_->SetScalarValue(shm_vol);
+                                RF_DebugLog("OnStartIO: synced shm volume=%.3f to VolumeControl", shm_vol);
+                            } else if (vc_vol > 0.0f) {
+                                rf_store_volume_scalar(shared_memory_, vc_vol);
+                                RF_DebugLog("OnStartIO: synced VolumeControl value=%.3f to shm", vc_vol);
+                            }
                         }
                         if (muteControl_) {
-                            bool muted = muteControl_->GetIsMuted();
-                            rf_store_mute_state(shared_memory_, muted ? 1 : 0);
-                            RF_DebugLog("OnStartIO: synced MuteControl value=%d", muted ? 1 : 0);
-                            RF_LOG_INFO("Synced mute=%d to shared memory", muted ? 1 : 0);
+                            int32_t shm_mute = rf_load_mute_state(shared_memory_);
+                            bool vc_muted = muteControl_->GetIsMuted();
+                            if (shm_mute != 0) {
+                                muteControl_->SetIsMuted(true);
+                            } else if (vc_muted) {
+                                rf_store_mute_state(shared_memory_, 1);
+                            }
                         }
 
                         return kAudioHardwareNoError;
@@ -1065,8 +1078,10 @@ std::shared_ptr<aspl::Device> CreateProxyDevice(const std::string& name, const s
     // Create custom VolumeControl and MuteControl that sync to shared memory
     auto volumeControl = std::make_shared<SoundBridgeVolumeControl>(
         g_state->context, aspl::VolumeControlParameters{});
+    volumeControl->SetScalarValue(1.0f);
     auto muteControl = std::make_shared<SoundBridgeMuteControl>(
         g_state->context, aspl::MuteControlParameters{});
+    muteControl->SetIsMuted(false);
 
     // Add controls to device
     device->AddVolumeControlAsync(volumeControl);
